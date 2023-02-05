@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Play } from 'phosphor-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,6 +12,7 @@ import {
   StartCountdownButton,
   TaskInput,
 } from './styles'
+import { differenceInSeconds } from 'date-fns'
 
 const TASK = 'task'
 const MINUTES_AMOUNT = 'minutesAmount'
@@ -30,13 +31,13 @@ interface Cycle {
   id: string
   [TASK]: string
   [MINUTES_AMOUNT]: number
+  startDate: Date
 }
 
 export function Home() {
   const [cycles, setCycles] = useState<Cycle[]>([])
   const [activeCycleId, setActiveCycleId] = useState<string | null>(null)
   const [amountSecondsPassed, setAmountSecondsPassed] = useState(0)
-
   const { register, handleSubmit, watch, reset } = useForm<NewCycleFormData>({
     resolver: zodResolver(newCycleFormValidationSchema),
     defaultValues: {
@@ -44,20 +45,6 @@ export function Home() {
       minutesAmount: 0,
     },
   })
-
-  function handleCreateNewCycle(data: NewCycleFormData) {
-    const id = new Date().getTime().toString()
-
-    const newCycle: Cycle = {
-      id,
-      [TASK]: data[TASK],
-      [MINUTES_AMOUNT]: data[MINUTES_AMOUNT],
-    }
-
-    setCycles((state) => [...state, newCycle])
-    setActiveCycleId(id)
-    reset()
-  }
 
   const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId)
   const totalSeconds = activeCycle ? activeCycle[MINUTES_AMOUNT] * 60 : 0
@@ -68,6 +55,31 @@ export function Home() {
   const seconds = String(secondsAmount).padStart(2, '0')
   const task = watch(TASK)
   const isSubmitDisabled = !task
+
+  useEffect(() => {
+    if (activeCycle) {
+      setInterval(() => {
+        setAmountSecondsPassed(
+          differenceInSeconds(new Date(), activeCycle.startDate),
+        )
+      }, 1000)
+    }
+  }, [activeCycle])
+
+  function handleCreateNewCycle(data: NewCycleFormData) {
+    const id = new Date().getTime().toString()
+
+    const newCycle: Cycle = {
+      id,
+      [TASK]: data[TASK],
+      [MINUTES_AMOUNT]: data[MINUTES_AMOUNT],
+      startDate: new Date(),
+    }
+
+    setCycles((state) => [...state, newCycle])
+    setActiveCycleId(id)
+    reset()
+  }
 
   return (
     <HomeContainer>
