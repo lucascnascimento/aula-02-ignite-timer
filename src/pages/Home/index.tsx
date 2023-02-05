@@ -47,22 +47,20 @@ export function Home() {
   })
 
   const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId)
-  const totalSeconds = activeCycle ? activeCycle[MINUTES_AMOUNT] * 60 : 0
-  const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0
-  const minutesAmount = Math.floor(currentSeconds / 60)
-  const secondsAmount = currentSeconds % 60
-  const minutes = String(minutesAmount).padStart(2, '0')
-  const seconds = String(secondsAmount).padStart(2, '0')
-  const task = watch(TASK)
-  const isSubmitDisabled = !task
 
   useEffect(() => {
+    let interval: number
+
     if (activeCycle) {
-      setInterval(() => {
+      interval = setInterval(() => {
         setAmountSecondsPassed(
           differenceInSeconds(new Date(), activeCycle.startDate),
         )
       }, 1000)
+    }
+
+    return () => {
+      clearInterval(interval)
     }
   }, [activeCycle])
 
@@ -78,8 +76,18 @@ export function Home() {
 
     setCycles((state) => [...state, newCycle])
     setActiveCycleId(id)
+    setAmountSecondsPassed(0)
     reset()
   }
+
+  const totalSeconds = activeCycle ? activeCycle[MINUTES_AMOUNT] * 60 : 0
+  const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0
+  const minutesAmount = Math.floor(currentSeconds / 60)
+  const secondsAmount = currentSeconds % 60
+  const minutes = String(minutesAmount).padStart(2, '0')
+  const seconds = String(secondsAmount).padStart(2, '0')
+  const task = watch(TASK)
+  const isSubmitDisabled = !task
 
   return (
     <HomeContainer>
